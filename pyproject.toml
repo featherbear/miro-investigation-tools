@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "miro-investigation"
+version = "0.1.0"
+description = ""
+authors = ["Andrew Wong <andrew.j.wong@outlook.com>"]
+readme = "README.md"
+packages = [{include = "miro_investigation"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.31.0"
+asyncio = "^3.4.3"
+aiohttp = "^3.8.4"
+aiolimiter = "^1.1.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

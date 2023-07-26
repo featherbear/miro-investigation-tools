@@ -1,0 +1,14 @@
+{
+  "name": "miro-investigation",
+  "version": "1.0.0",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "2",
+    "queue": "^7.0.0",
+    "sucrase": "^3.32.0"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/node-fetch": "2"
+  }
+}
