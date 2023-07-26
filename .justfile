@@ -12,15 +12,19 @@ set dotenv-load := true
 @getTeamUsers:
 	yarn sucrase-node getTeamUsers.ts
 
-@analysis:
-	yarn sucrase-node analysis.ts
+@listUserMembership:
+	yarn sucrase-node listUserMembership.ts
 
-@boardStats:
-	poetry run python3 boardStats.py
+@getBoards:
+	poetry run python3 getBoards.py
 
-@downloadBoardData:
-	poetry run python3 downloadBoardData.py
+@listBoards:
+	poetry run python3 listBoards.py
 
 @_suite:
-	(just getOrgUsers) &
-	(just getTeams && just getTeamUsers) &
+	just getOrgUsers
+	just getTeams
+	just getTeamUsers
+	just getBoards
+	just listUserMembership
+	just listBoards
