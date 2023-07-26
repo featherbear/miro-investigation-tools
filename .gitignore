@@ -2,5 +2,4 @@
 .vscode/
 *.ignore
 /data/
-!/data/boards/.gitkeep
 node_modules/
