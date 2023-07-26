@@ -34,4 +34,8 @@ allBoards = []
 for boards in boardsByTeam.values():
     allBoards.extend(boards)
 
+with open("data/boards.flat.json", "w") as f:
+    json.dump(allBoards, f)
+
 print(f"There are a total of {len(allBoards)} boards")
+
