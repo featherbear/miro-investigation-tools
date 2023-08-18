@@ -45,7 +45,7 @@ const sourceFiles = {
 let domainIgnoreList = (process.env["DOMAIN"] ?? "").split(",")
 
 let orgUsers: User[] = JSON.parse(fs.readFileSync(sourceFiles.orgUsers).toString())
-let externalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
+let externalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => !domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
 let internalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
 
 let teams: Team[] = JSON.parse(fs.readFileSync(sourceFiles.teams).toString()).flat()
