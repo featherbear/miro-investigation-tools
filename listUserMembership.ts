@@ -1,5 +1,27 @@
 import fs from 'fs'
 
+type ID = string
+
+interface User {
+    createdAt: Date
+    createdBy: ID
+    createdByUserId: ID
+    id: ID,
+    memberId: ID,
+    modifiedAt: Date
+    modifiedBy: ID
+    modifiedByUserId: ID
+    role: 'member' | string,
+    teamId: ID,
+    userRole: 'member' | string,
+    type: 'team-member' | string,
+    email: string
+}
+
+interface Team {
+    id: ID
+    name: string
+}
 
 const sourceFiles = {
     orgUsers: "data/orgUsers.json",
@@ -20,28 +42,20 @@ const sourceFiles = {
     }
 }
 
-let orgUsers: [] = JSON.parse(fs.readFileSync(sourceFiles.orgUsers).toString())
+let domainIgnoreList = (process.env["DOMAIN"] ?? "").split(",")
 
-let orgUsers_external_ids = Object.values(orgUsers)
-    // .filter(({ role }) => role !== 'organization_external_user')
-    .filter(({ email }: { email: string }) => !email.endsWith(`@${process.env["DOMAIN"]}`))
+let orgUsers: User[] = JSON.parse(fs.readFileSync(sourceFiles.orgUsers).toString())
+let externalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
+let internalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
 
-
-let atlUsers: string[] = Object.values(orgUsers).filter(({ email }: { email: string }) => email.endsWith("@atlassian.com")).map(({ id }) => id)
-
-
-let teams: [] = JSON.parse(fs.readFileSync(sourceFiles.teams).toString()).flat()
+let teams: Team[] = JSON.parse(fs.readFileSync(sourceFiles.teams).toString()).flat()
 let teamUsers = JSON.parse(fs.readFileSync(sourceFiles.teamUsers).toString())
 
-console.log(`Found ${Object.values(orgUsers).length} org users, of which ${orgUsers_external_ids.length} are external`);
+console.log(`Found ${Object.values(orgUsers).length} org users, of which ${externalUsers.length} are external`);
 
 
-function filterOutAtlassian(atlID) {
-    return !atlUsers.includes(atlID.id)
-}
-
-let unknown = []
-function alertUnknown(team, obj) {
+let unknown: [Team, User][] = []
+function alertUnknown(team: Team, obj: User) {
     let email = orgUsers[obj.id]?.email
     if (!email) {
         unknown.push([team, obj])
@@ -51,12 +65,19 @@ function alertUnknown(team, obj) {
 }
 
 interface Thingy {
-    Members: any[]
+    Members: User[]
     Team: string
 }
 
 let teamsWithExternalMembers: Thingy[] = teams
-    .map(team => ({ Team: team.name, Members: teamUsers[team.id].flat().filter(filterOutAtlassian).map((obj) => ({ ...obj, email: alertUnknown(team, obj) })) }))
+    .map(team => ({
+        Team: team.name, Members: teamUsers[team.id].flat().filter(
+
+            (user) => !internalUsers.includes(user.id)
+
+
+        ).map((obj) => ({ ...obj, email: alertUnknown(team, obj) }))
+    }))
 
 function filterHasMembers(obj: Thingy[]) {
     return [...obj].filter(({ Members }) => Members.length > 0)
@@ -84,20 +105,29 @@ console.log();
 
 users = teamsWithExternalMembers.map((obj) => ({ ...obj, Members: obj.Members.filter(u => u.role !== 'non_team') }))
 console.log("Teams with external members in the team ⚠️ CAN VIEW ALL BOARDS ⚠️");
+
+
+console.log(sortByMemberCount(filterHasMembers(users))[0].Members[0]);
 console.table(
-    summateMembers(
-        sortByMemberCount(filterHasMembers(
-            users
-        )
-        )),
-    ["Team", "Members"]
-)
+    sortByMemberCount(filterHasMembers(users))
+        .flatMap(o => (
+            o.Members.map((member: User, i) => ({
+                Team: o.Team,
+                Count: i + 1,
+                Member: member.email
+            }))
+        ))
+);
 
-// console.log(
-// JSON.stringify(
-//     sortByMemberCount(filterHasMembers(users)).map(team => ({ team: team.Team, users: team.Members.map(u => u.email) })))
+// // // // // Team, Count // // // // //
+// console.table(
+//     summateMembers(
+//         sortByMemberCount(filterHasMembers(
+//             users
+//         )
+//         )),
+//     ["Team", "Members"]
 // )
-
 
 if (unknown.length) {
     console.warn(unknown)
