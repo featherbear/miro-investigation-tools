@@ -106,8 +106,6 @@ console.log();
 users = teamsWithExternalMembers.map((obj) => ({ ...obj, Members: obj.Members.filter(u => u.role !== 'non_team') }))
 console.log("Teams with external members in the team ⚠️ CAN VIEW ALL BOARDS ⚠️");
 
-
-console.log(sortByMemberCount(filterHasMembers(users))[0].Members[0]);
 console.table(
     sortByMemberCount(filterHasMembers(users))
         .flatMap(o => (
