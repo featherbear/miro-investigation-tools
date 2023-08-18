@@ -51,7 +51,7 @@ let internalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: st
 let teams: Team[] = JSON.parse(fs.readFileSync(sourceFiles.teams).toString()).flat()
 let teamUsers = JSON.parse(fs.readFileSync(sourceFiles.teamUsers).toString())
 
-console.log(`Found ${Object.values(orgUsers).length} org users, of which ${externalUsers.length} are external`);
+console.log(`Found ${Object.values(orgUsers).length} users added into the organisation, of which ${externalUsers.length} are external`);
 
 
 let unknown: [Team, User][] = []
@@ -91,6 +91,7 @@ function summateMembers(obj: Thingy[]) {
     return obj.map((obj) => ({ ...obj, Members: obj.Members.length }))
 }
 
+console.log();
 console.log("Teams with external members as guests (Can view some)");
 var users = teamsWithExternalMembers.map((obj) => ({ ...obj, Members: obj.Members.filter(u => u.role === 'non_team') }))
 console.table(
