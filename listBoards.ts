@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { ID, Team, TeamUser, User } from './types'
+import { Board, ID, Team, TeamUser, User } from './types'
 
 export type URL = string
 
@@ -20,66 +20,6 @@ if (!fs.existsSync(sourceFiles.boardsByTeam)) {
 if (!fs.existsSync(sourceFiles.teams)) {
   console.error(`${sourceFiles.teams} does not exist`)
   process.exit(1)
-}
-
-export interface Board {
-  "id": ID,
-  "type": "board",
-  "name": string,
-  "description": string,
-  "links": {
-    "self": URL,
-    "related": URL
-  },
-  "createdAt": Date
-  "createdBy": {
-    "id": ID
-    "type": "user",
-    "name": string
-  },
-  "modifiedAt": Date
-  "modifiedBy": {
-    "id": ID
-    "type": "user",
-    "name": string
-  },
-  "owner": {
-    "id": ID
-    "type": "user",
-    "name": string
-  },
-  "permissionsPolicy": {
-    "collaborationToolsStartAccess": string | "all_editors",
-    "copyAccess": string | "anyone",
-    "copyAccessLevel": string | "anyone",
-    "sharingAccess": string | "team_members_with_editing_rights"
-  },
-  "policy": {
-    "permissionsPolicy": {
-      "collaborationToolsStartAccess": string | "all_editors",
-      "copyAccess": string | "anyone",
-      "copyAccessLevel": string | "anyone",
-      "sharingAccess": string | "team_members_with_editing_rights"
-    },
-    "sharingPolicy": {
-      "access": string | "private",
-      "inviteToAccountAndBoardLinkAccess": string | "no_access",
-      "organizationAccess": string | "private",
-      "teamAccess": string | "edit"
-    }
-  },
-  "sharingPolicy": {
-    "access": string | "private",
-    "inviteToAccountAndBoardLinkAccess": string | "no_access",
-    "organizationAccess": string | "private",
-    "teamAccess": string | "edit"
-  },
-  "team": {
-    "id": ID
-    "type": "team",
-    "name": string
-  },
-  "viewLink": URL
 }
 
 let boardsByTeam: { [team: ID]: Board[] } = JSON.parse(fs.readFileSync(sourceFiles.boardsByTeam).toString())
