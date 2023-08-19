@@ -1,57 +1,16 @@
-import fs from 'fs'
+import { ID, Team, TeamUser, User } from './types'
+import { dataMethods } from './utils'
 
-type ID = string
+let domainIgnoreList = dataMethods.domainIgnoreList()
 
-interface User {
-    createdAt: Date
-    createdBy: ID
-    createdByUserId: ID
-    id: ID,
-    memberId: ID,
-    modifiedAt: Date
-    modifiedBy: ID
-    modifiedByUserId: ID
-    role: 'member' | string,
-    teamId: ID,
-    userRole: 'member' | string,
-    type: 'team-member' | string,
-    email: string
-}
+let orgUsers = dataMethods.orgUsers()
+let externalUsers = dataMethods.externalUsers()
+let internalUsers = dataMethods.internalUsers()
 
-interface Team {
-    id: ID
-    name: string
-}
+let teams = dataMethods.teams()
+let teamUsers = dataMethods.teamUsers()
 
-const sourceFiles = {
-    orgUsers: "data/orgUsers.json",
-    teams: "data/teams.json",
-    teamUsers: "data/teamUsers.json"
-}
-
-{
-    let fail = false
-    for (let [type, path] of Object.entries(sourceFiles)) {
-        if (!fs.existsSync(path)) {
-            console.warn(`${path} does not exist, pull ${type} first`)
-        }
-    }
-
-    if (fail) {
-        process.exit(1)
-    }
-}
-
-let domainIgnoreList = (process.env["DOMAIN"] ?? "").split(",")
-
-let orgUsers: User[] = JSON.parse(fs.readFileSync(sourceFiles.orgUsers).toString())
-let externalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => !domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
-let internalUsers: ID[] = Object.values(orgUsers).filter(({ email }: { email: string }) => domainIgnoreList.some(suffix => email.endsWith(`@${suffix}`))).map(({ id }) => id)
-
-let teams: Team[] = JSON.parse(fs.readFileSync(sourceFiles.teams).toString()).flat()
-let teamUsers = JSON.parse(fs.readFileSync(sourceFiles.teamUsers).toString())
-
-console.log(`Found ${Object.values(orgUsers).length} users added into the organisation, of which ${externalUsers.length} are external`);
+console.log(`Found ${Object.values(orgUsers).length} users added into the organisation (either as a guest, or a team member), of which ${externalUsers.length} are external`);
 
 
 let unknown: [Team, User][] = []
@@ -64,14 +23,14 @@ function alertUnknown(team: Team, obj: User) {
     return email
 }
 
-interface Thingy {
+interface TeamUser__Pair {
     Members: User[]
-    Team: string
+    Team: Team
 }
 
-let teamsWithExternalMembers: Thingy[] = teams
+let teamsWithExternalMembers: TeamUser__Pair[] = teams
     .map(team => ({
-        Team: team.name, Members: teamUsers[team.id].flat().filter(
+        Team: team, Members: teamUsers[team.id].flat().filter(
 
             (user) => !internalUsers.includes(user.id)
 
@@ -79,15 +38,15 @@ let teamsWithExternalMembers: Thingy[] = teams
         ).map((obj) => ({ ...obj, email: alertUnknown(team, obj) }))
     }))
 
-function filterHasMembers(obj: Thingy[]) {
+function filterHasMembers(obj: TeamUser__Pair[]) {
     return [...obj].filter(({ Members }) => Members.length > 0)
 }
 
-function sortByMemberCount(obj: Thingy[]) {
+function sortByMemberCount(obj: TeamUser__Pair[]) {
     return [...obj].sort((a, b) => b.Members.length - a.Members.length)
 }
 
-function summateMembers(obj: Thingy[]) {
+function summateMembers(obj: TeamUser__Pair[]) {
     return obj.map((obj) => ({ ...obj, Members: obj.Members.length }))
 }
 
@@ -107,16 +66,32 @@ console.log();
 users = teamsWithExternalMembers.map((obj) => ({ ...obj, Members: obj.Members.filter(u => u.role !== 'non_team') }))
 console.log("Teams with external members in the team ⚠️ CAN VIEW ALL BOARDS ⚠️");
 
-console.table(
-    sortByMemberCount(filterHasMembers(users))
-        .flatMap(o => (
-            o.Members.map((member: User, i) => ({
-                Team: o.Team,
-                Count: i + 1,
-                Member: member.email
-            }))
-        ))
-);
+// console.table(
+//     sortByMemberCount(filterHasMembers(users))
+//         .flatMap(o => (
+//             o.Members.map((member: User, i) => ({
+//                 Team: o.Team.name,
+//                 TeamID: o.Team.id,
+//                 Count: i + 1,
+//                 Member: member.email,
+
+//             }))
+//         ))
+// );
+
+
+for (let group of
+    (function sortByMemberCount(obj: TeamUser__Pair[]) {
+        return [...obj].sort((a, b) => a.Team.name.localeCompare(b.Team.name))
+    })(filterHasMembers(users)).map(o => ({
+        Team: o.Team.name,
+        TeamID: o.Team.id,
+        // Admin: teamUsers[o.Team.id].filter(u => u.role === 'admin').map(u => orgUsers[u.id].email),
+        Member: o.Members.map(u => u.email).join('*')
+    }))
+) {
+    console.log([group.Team, group.TeamID, group.Member].join(","));
+}
 
 // // // // // Team, Count // // // // //
 // console.table(
@@ -128,6 +103,6 @@ console.table(
 //     ["Team", "Members"]
 // )
 
-if (unknown.length) {
+if (unknown.length > 0) {
     console.warn(unknown)
 }

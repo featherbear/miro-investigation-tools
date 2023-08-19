@@ -38,11 +38,14 @@ for (let board of allBoards) {
   let email = orgUsers[board.owner.id].email
   if (dataMethods.isDomainEmail(email, ignoreList)) continue
   const newItem = {
-    name: board.name, team: board.team.name, owner: email, link: board.viewLink
+    name: board.name, team: board.team.name, owner: email, link: board.viewLink, created: board.createdAt, updated: board.modifiedAt
   }
 
   ExternalOwnedBoards.push(newItem)
   console.log("Found external board " + ExternalOwnedBoards.length);
 }
 
-console.table(ExternalOwnedBoards)
+ExternalOwnedBoards.sort((a,b) => a.updated.localeCompare(b.updated))
+
+console.log(ExternalOwnedBoards.map((o) => Object.values(o).join(",")).join("\n"));
+// console.table(ExternalOwnedBoards)
