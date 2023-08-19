@@ -25,7 +25,7 @@ set dotenv-load := true
 
 # Show information about boards in a team
 @listBoards:
-	poetry run python3 listBoards.py
+	yarn sucrase-node listBoards.ts
 
 @_suite:
 	just getOrgUsers
